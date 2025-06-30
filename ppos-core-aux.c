@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include "disk-driver.h"
+#include <string.h>
 
 // ****************************************************************************
 // Adicione TUDO O QUE FOR NECESSARIO para realizar o seu trabalho
@@ -230,7 +231,15 @@ int disk_get_num_blocks() {
 }
 
 void before_ppos_init () {
-    // put your customization here
+    char* policy_str = getenv("PPOS_SCHEDULER");
+
+    if (policy_str) { 
+        if (strcmp(policy_str, "SSTF") == 0) {
+            disk_set_scheduler(DISK_SCHED_SSTF);
+        } else if (strcmp(policy_str, "CSCAN") == 0) {
+            disk_set_scheduler(DISK_SCHED_CSCAN);
+        }
+    }
 #ifdef DEBUG
     printf("\ninit - BEFORE");
 #endif
@@ -267,11 +276,27 @@ void before_task_exit () {
 }
 
 void after_task_exit () {
-    // put your customization here
-#ifdef DEBUG
-    printf("\ntask_exit - AFTER- [%d]", taskExec->id);
-#endif
-    
+    if (taskExec->id == 0) {
+        long int final_travel = disk_head_travel_get();
+        unsigned int final_time = systime();
+
+        char* policy_name;
+        switch(disk.scheduling_policy) {
+            case DISK_SCHED_SSTF:
+                policy_name = "SSTF";
+                break;
+            case DISK_SCHED_CSCAN:
+                policy_name = "CSCAN";
+                break;
+            default:
+                policy_name = "FCFS";
+                break;
+        }
+        printf("  Relatorio de Desempenho do Disco:\n");
+        printf("  Politica Executada: %s\n", policy_name);
+        printf("  -> Tempo total de execucao: %u ms\n", final_time);
+        printf("  -> Distancia total percorrida: %ld blocos\n", final_travel);
+    }
 }
 
 void before_task_switch ( task_t *task ) {
@@ -283,7 +308,7 @@ void before_task_switch ( task_t *task ) {
 }
 
 void after_task_switch ( task_t *task ) {
-    // put your customization here
+    _systemTime++;
 #ifdef DEBUG
     printf("\ntask_switch - AFTER - [%d -> %d]", taskExec->id, task->id);
 #endif
