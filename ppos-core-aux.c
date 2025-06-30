@@ -295,7 +295,6 @@ void after_task_exit () {
         printf("  Relatorio de Desempenho do Disco:\n");
         printf("  Politica Executada: %s\n", policy_name);
         printf("  -> Tempo total de execucao: %u ms\n", final_time);
-        printf("  -> Distancia total percorrida: %ld blocos\n", final_travel);
     }
 }
 
